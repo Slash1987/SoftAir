@@ -1,0 +1,18 @@
+name: SoftAir
+main: com.slash.softAir.SoftAir
+version: 0.9b
+commands:
+    SoftAir:
+       description: softair commands
+       usage: |
+              /<command> [action] [attribute]
+              Example: /<command> join - Join a team in the game.
+              Example: /<command> setSpawn [teamname] - Set the spawnpoint of a team.
+              Example: /<command> enable - Enable the game.
+              Example: /<command> disable - Disable the game.
+              Example: /<command> ready - Set your status to ready.
+              Example: /<command> players - Tells how many players' in game
+              Example: /<command> setFee - Set the fee to enter the game (NOT ENABLED YET)
+              Example: /<command> getFee - Tells you the fee to enter the game (NOT ENABLED YET)
+              Example: /<command> status - Tells the game status (JUST FOR CONTROL)
+              Example: /<command> initialize - Reset all the plugin information
