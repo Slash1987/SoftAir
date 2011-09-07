@@ -23,9 +23,9 @@ public class SoftAirEntityListener extends EntityListener{
 		if (e instanceof EntityDamageByEntityEvent && ((EntityDamageByEntityEvent) e).getCause() == DamageCause.PROJECTILE) {
             EntityDamageByEntityEvent event = (EntityDamageByEntityEvent) e;
             if(event.getDamager() instanceof Arrow){
-            	Arrow projectile= (Arrow) event.getDamager();
-            	if(projectile.getShooter() instanceof Player && event.getEntity() instanceof Player){
-            		Player shooter=(Player)projectile.getShooter();
+            	Arrow arrow= (Arrow) event.getDamager();
+            	if(arrow.getShooter() instanceof Player && event.getEntity() instanceof Player){
+            		Player shooter=(Player)arrow.getShooter();
             		Player shoot =(Player) event.getEntity();
             		if(plugin.isPlayerInGame(shooter.getName())&&plugin.isPlayerInGame(shoot.getName())){
             			plugin.hit(shoot, shooter);
