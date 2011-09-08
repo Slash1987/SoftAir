@@ -1,52 +1,22 @@
 package com.slash.softAir.Util;
 
-import com.iCo6.*;
+import com.iConomy.iConomy;
+import com.iConomy.system.Holdings;
 
 public class SoftAirEconomy {
-	/*
-	private iConomy iCo;
-	private int fee = 0;
-	private Double pool = 0.0;
-	
-	public void setIConomy(iConomy ico){
-		iCo=ico;
+
+	public static boolean canAffor(String name,Double amount){
+		Holdings h = iConomy.getAccount(name).getHoldings();
+		return (h.balance()>=amount);
 	}
 	
-	public iConomy getIConomy(){
-		return iCo;
+	public static void pay(String name,Double amount){
+		Holdings h = iConomy.getAccount(name).getHoldings();
+		h.subtract(amount);
 	}
 	
-	public void setFee(int i){
-		fee=i;
+	public static void give(String name,Double amount){
+		Holdings h = iConomy.getAccount(name).getHoldings();
+		h.add(amount);
 	}
-	
-	public Double getFee(){
-		return (double) fee;
-	}
-	
-	public void playerPay(String player){
-		iConomy.getAccount(player).getHoldings().subtract(fee);
-		pool+=fee;
-	}
-	
-	public boolean canPay(String player){
-		return iConomy.getAccount(player).getHoldings().hasEnough(fee);
-	}
-	
-	public Double getReward(int players){
-		return pool/players;
-	}
-	
-	public void resetPool(){
-		pool = 0.0;
-	}
-	
-	public void payPlayer(Double amount,String player){
-		iConomy.getAccount(player).getHoldings().add(amount);
-	}
-	
-	public boolean isEnabled(){	
-		return iCo.isEnabled();
-	}
-	*/
 }

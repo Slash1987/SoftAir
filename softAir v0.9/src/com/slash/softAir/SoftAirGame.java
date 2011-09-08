@@ -6,6 +6,8 @@ public class SoftAirGame {
 	private boolean gameEnabled;
 	private boolean gameInProgress;
 	private boolean spawnSet;
+	private Double fee = 0.0;
+	private Double pool = 0.0;
 	public boolean isGameWaiting() {
 		return gameWaiting;
 	}
@@ -29,6 +31,18 @@ public class SoftAirGame {
 	}
 	public void setSpawnSet(boolean spawnSet) {
 		this.spawnSet = spawnSet;
+	}
+	public Double getFee() {
+		return fee;
+	}
+	public void setFee(Double fee) {
+		this.fee = fee;
+	}
+	public Double getPool() {
+		return pool;
+	}
+	public void setPool(Double pool) {
+		this.pool = pool;
 	}
 
 }

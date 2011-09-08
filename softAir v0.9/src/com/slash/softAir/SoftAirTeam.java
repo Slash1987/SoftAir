@@ -17,7 +17,7 @@ public class SoftAirTeam {
 	}
 	
 	public ArrayList<String> getPlayers(){
-		return (ArrayList<String>) players.clone();
+		return players;
 	}
 	
 	public int getSize(){

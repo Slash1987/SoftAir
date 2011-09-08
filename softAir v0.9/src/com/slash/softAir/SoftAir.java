@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 
+import com.iConomy.iConomy;
 import com.slash.softAir.Listener.SoftAirEntityListener;
 import com.slash.softAir.Listener.SoftAirPlayerListener;
 import com.slash.softAir.Util.SQLManager;
@@ -25,7 +26,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 	private PluginManager pm;
 	private SoftAirEntityListener entityListener;
 	private SoftAirPlayerListener playerListener;
-	public SoftAirEconomy economy;
+	private SoftAirServerListener serverListener;
 	private SQLManager sql;
 	private SoftAirTimer timer;
 	public int x=5;
@@ -42,6 +43,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 
 	
 	public SoftAirGame GAME = new SoftAirGame();
+	public iConomy iCo = null;
 	
 	//Constructor
 	public SoftAir(){
@@ -59,13 +61,15 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		log.info("[SoftAir] Plugin Disabled");
 	}
 	public void onEnable() {
-		economy = new SoftAirEconomy();
-		entityListener = new SoftAirEntityListener(instance);
-		playerListener = new SoftAirPlayerListener(instance);
+		entityListener = new SoftAirEntityListener(this);
+		playerListener = new SoftAirPlayerListener(this);
+		serverListener = new SoftAirServerListener(this);
 		pm = this.getServer().getPluginManager();
-		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Event.Priority.Highest, this);
-		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Event.Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLUGIN_ENABLE, serverListener, Event.Priority.Monitor, this);
+        pm.registerEvent(Event.Type.PLUGIN_DISABLE, serverListener, Event.Priority.Monitor, this);
+		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Event.Priority.Monitor, this);
+		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Event.Priority.Monitor, this);
+		pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Event.Priority.Monitor, this);
 		pm.registerEvent(Event.Type.ENTITY_DAMAGE, entityListener, Event.Priority.Highest, this);
 		getCommand("softair").setExecutor(new SoftAirCommand(this));
 		sql = new SQLManager(this);
@@ -75,7 +79,6 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		} catch (Exception e) {
 
 		}
-		//TODO connection with iConomy
 		log.info("[SoftAir] Plugin Enabled");
 	}
 
@@ -91,7 +94,6 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		GAME.setGameEnabled(status[0]);
 		GAME.setGameWaiting(status[1]);
 		GAME.setGameInProgress(status[2]);
-		//economy.setFee(sql.getFee());
 		/**
 		 * Retrive Teams Information (Spawn point)
 		 */
@@ -116,6 +118,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 				log.info("[SoftAir]To initialize the game(and loose all the information stored) type /softair initialize");
 			}
 		}
+		GAME.setFee((double) sql.getFee());
 		/**
 		 * If spawn for team are not set disableTheGame
 		 */
@@ -146,10 +149,11 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		if(isPlayerInGame(player)){
 			players.setReady(player);
 			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"You set your status to READY");
+			getServer().broadcastMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_PURPLE+player+ChatColor.DARK_GREEN+"has set it's status to READY");
 			controlStatus();
 		}
 		else
-			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"You must join the game first");
+			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.RED+"You must join the game first");
 	}
 	public void controlStatus(){
 		/**
@@ -167,7 +171,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 				catch(Exception e){}
 			}
 			else
-			players.sendMessageToAll(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Need at least 1 player per team");
+			players.sendMessageToAll(ChatColor.YELLOW+"[Softair]"+ChatColor.RED+"Need at least 1 player per team");
 		}
 	}
 
@@ -176,9 +180,9 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		 * If player typped /softair Players send him the number of players in game and in each team
 		 */
 		int[] playersNumber = players.getPlayersInGame();
-		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Total Players In Game 	: "+ChatColor.YELLOW+playersNumber[0]);
-		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Players In Gold Team  	: "+ChatColor.YELLOW+playersNumber[1]);
-		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Players In Diamond Team : "+ChatColor.YELLOW+playersNumber[2]);
+		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Total Players In Game   : "+ChatColor.YELLOW+playersNumber[0]);
+		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.GOLD+"Players In Gold Team    : "+ChatColor.YELLOW+playersNumber[1]);
+		sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.AQUA+"Players In Diamond Team : "+ChatColor.YELLOW+playersNumber[2]);
 	}
 	public boolean isPlayerInGame(String player){
 		return players.isPlayerInGame(player);
@@ -239,35 +243,38 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		 * add player to the team
 		 * teleport the player to the team location
 		 */
-		//if(economy.isEnabled()){
-			//if(economy.canPay(((Player)sender).getName()))
-				//economy.playerPay(((Player)sender).getName());
-			//else
-				//sender.sendMessage("[Softair]You can't afford the game fee");
-			//return;
-		//}
-		GAME.setGameWaiting(true);
-		if(gold.getSize()<=diamond.getSize()){
-			players.addPlayer((Player)sender, "gold");
-			gold.addPlayer(((Player)sender).getName());
-			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Succesfully joined"+ChatColor.GOLD+" GOLD team");
-			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Type '/softair ready' to begin the game");
-			((Player)sender).teleport(gold.getCords());
-		}
-		else{
-			players.addPlayer((Player)sender, "diamond");
-			diamond.addPlayer(((Player)sender).getName());
-			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Succesfully joined"+ChatColor.AQUA+" DIAMOND team");
-			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Type '/softair ready' to begin the game");
-			((Player)sender).teleport(diamond.getCords());
-		}
-		String name=((Player)sender).getName();
-		try {
-			sql.addPlayer(name, players.getInventory(name), players.getArmor(name),((Player)sender).getLocation());
-			sql.setWaiting(1);
-		} catch (Exception e) {
-
-		}
+		Player p = (Player)sender;
+			if(iCo!=null){
+				if(SoftAirEconomy.canAffor(p.getName(),GAME.getFee())){
+					SoftAirEconomy.pay(p.getName(), GAME.getFee());
+					GAME.setPool(GAME.getPool()+GAME.getFee());
+					sender.sendMessage(ChatColor.YELLOW+"[SoftAir]"+ChatColor.GREEN+iConomy.format(GAME.getFee())+" subtracted from your holdings");
+				}
+				else{
+					sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"You can't affor the game fee");
+					return;
+				}
+			}
+			GAME.setGameWaiting(true);
+			if(gold.getSize()<=diamond.getSize()){
+				players.addPlayer(p, "gold");
+				gold.addPlayer(p.getName());
+				sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Succesfully joined"+ChatColor.GOLD+" GOLD team");
+				sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Type '/softair ready' to begin the game");
+				p.teleport(gold.getCords());
+			}
+			else{
+				players.addPlayer(p, "diamond");
+				diamond.addPlayer(p.getName());
+				sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Succesfully joined"+ChatColor.AQUA+" DIAMOND team");
+				sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Type '/softair ready' to begin the game");
+				p.teleport(diamond.getCords());
+			}
+			String name=p.getName();
+			try {
+				sql.addPlayer(name, players.getInventory(name), players.getArmor(name),((Player)sender).getLocation());
+				sql.setWaiting(1);
+			} catch (Exception e) {}
 	}
 	public void hit(Player player,Player hitter){
 		/**
@@ -278,8 +285,8 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		 */
 		SoftAirTeam team = getTeam(players.getTeam(player.getName()));
 		SoftAirTeam hTeam = getOtherTeam(team);
-		player.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"You have been killed by "+ChatColor.DARK_PURPLE+hitter.getName());
-		hitter.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"You have killed "+ChatColor.DARK_PURPLE+player.getName());
+		player.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.RED+"You have been killed by "+ChatColor.DARK_PURPLE+hitter.getName());
+		hitter.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.RED+"You have killed "+ChatColor.DARK_PURPLE+player.getName());
 		try {
 			sql.removePlayer(player.getName());
 		} catch (Exception e) {
@@ -299,18 +306,20 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 			tColor=ChatColor.GOLD;
 		else
 			tColor=ChatColor.AQUA;
-		//Double reward = economy.getReward(team.getSize());
 		if(player.isEmpty()){
 			return;
 		}
 		else{
+			double reward = GAME.getPool()/player.size();
 			for(int i=0; i<player.size();i++){
-				System.out.println(getServer().getPlayer(player.get(i)));
-				getServer().getPlayer(player.get(i)).sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Your Team Won");
+				Player p = getServer().getPlayer(player.get(i));
+				p.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.DARK_GREEN+"Congratulation, you're the winner");
+				if(iCo!=null)
+					SoftAirEconomy.give(p.getName(), reward);
+				else
+					p.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.RED+"Lost connection with iConomy");
 				team.removePlayer(player.get(i));
 				this.players.removePlayer(getServer().getPlayer(player.get(i)));
-				//economy.payPlayer(reward, name);
-				//instance.getServer().getPlayer(name).sendMessage("[Softair]You get rewarded with "+iConomy.format(reward));
 				try{
 					sql.removePlayer(player.get(i));
 				}
@@ -398,7 +407,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		 */
 		if(team.equalsIgnoreCase("gold")){
 			gold.setCords(((Player)sender).getLocation());
-			sender.sendMessage(ChatColor.GOLD+"[Softair]Gold spawn set");
+			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.GOLD+" Gold spawn set");
 			try {
 				sql.setSpawn("gold", gold.getCords().getWorld().getName(), gold.getCords().getX(), gold.getCords().getY(), gold.getCords().getZ());
 			} catch (Exception e) {
@@ -407,7 +416,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		}
 		else if(team.equalsIgnoreCase("diamond")){
 			diamond.setCords(((Player)sender).getLocation());
-			sender.sendMessage(ChatColor.AQUA+"[Softair]Diamond spawn set");
+			sender.sendMessage(ChatColor.YELLOW+"[Softair]"+ChatColor.AQUA+" Diamond spawn set");
 			try {
 				sql.setSpawn("diamond", diamond.getCords().getWorld().getName(), diamond.getCords().getX(), diamond.getCords().getY(), diamond.getCords().getZ());
 			} catch (Exception e) {
@@ -416,7 +425,7 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		}
 		if(gold.getSpawnSet()&&diamond.getSpawnSet()){
 			GAME.setSpawnSet(true);
-			sender.sendMessage(ChatColor.GREEN+"All spawn set, the game can start");
+			sender.sendMessage(ChatColor.YELLOW+"[SoftAir]"+ChatColor.DARK_GREEN+" Game can be enabled");
 		}
 	}
 
@@ -429,6 +438,9 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 
 	public void initialize(){
 		initializeGame();
+		gold = new SoftAirTeam("gold",this);
+		diamond = new SoftAirTeam("diamond",this);
+		players.clear();
 		try{
 			sql.initialize();
 		}
@@ -439,10 +451,6 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		catch(Exception e){}
 	}
 
-
-	/**
-	 * @param b
-	 */
 	public void setGameInProgress(boolean b) {
 		GAME.setGameInProgress(b);
 		try{
@@ -450,13 +458,19 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 		}
 		catch(Exception e){}
 	}
-	/**
-	 * @param b
-	 */
+
 	public void setGameWaiting(boolean b){
 		GAME.setGameWaiting(b);
 		try{
 			sql.setWaiting(boolToInt(b));
+		}
+		catch(Exception e){}
+	}
+
+	public void setGameFee(Double fee){
+		GAME.setFee(fee);
+		try{
+			sql.setFee(fee.intValue());
 		}
 		catch(Exception e){}
 	}
@@ -474,10 +488,10 @@ public class SoftAir extends org.bukkit.plugin.java.JavaPlugin{
 	}
 	
 	public void initializeGame(){
-		this.setGameInProgress(false);
-		GAME.setGameInProgress(false);
-		this.setGameWaiting(false);
-		GAME.setGameWaiting(false);
+		setGameInProgress(false);
+		setGameWaiting(false);
+		setGameFee(0.0);
+		GAME.setPool(0.0);
 	}
 
 
